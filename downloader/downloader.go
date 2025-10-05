@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -16,10 +17,35 @@ func CreateEmptyFile(path string, size int64) (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
 	file.Seek(size-1, io.SeekStart)
 	file.Write([]byte{0})
 	return file, nil
+}
+
+type DownloadJob struct {
+	fileURL string
+	offset  Offset
+}
+
+type DownloadedChunk struct {
+	rawBytes []byte
+	offset   Offset
+	err      error
+}
+
+func DownloadAsync(ctx context.Context, downloadQueue <-chan DownloadJob, results chan<- DownloadedChunk, wg *sync.WaitGroup) 
+	defer wg.Done()
+	defer close(result)
+
+	for downloadJob := range downloadQueue {
+		rawBytes, err := DownloadChunk(ctx, downloadJob.fileURL, downloadJob.offset)
+		downloadChunk := DownloadedChunk{
+			rawBytes: rawBytes,
+			offset:   downloadJob.offset,
+			err:      err,
+		}
+		result <- downloadChunk
+	}
 }
 
 func DownloadChunk(ctx context.Context, fileURL string, offset Offset) ([]byte, error) {
