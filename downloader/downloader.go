@@ -23,32 +23,30 @@ func CreateEmptyFile(path string, size int64) (*os.File, error) {
 }
 
 type DownloadJob struct {
-	fileURL string
-	offset  Offset
+	FileURL string
+	Offset  Offset
 }
 
 type DownloadedChunk struct {
-	rawBytes []byte
-	offset   Offset
-	err      error
+	RawBytes []byte
+	Offset   Offset
+	Err      error
 }
 
-func DownloadAsync(ctx context.Context, downloadQueue <-chan DownloadJob, results chan<- DownloadedChunk, wg *sync.WaitGroup) 
+func DownloadAsync(ctx context.Context, downloadQueue <-chan DownloadJob, results chan<- DownloadedChunk, wg *sync.WaitGroup) {
 	defer wg.Done()
-	defer close(result)
-
 	for downloadJob := range downloadQueue {
-		rawBytes, err := DownloadChunk(ctx, downloadJob.fileURL, downloadJob.offset)
+		rawBytes, err := ChunkDownload(ctx, downloadJob.FileURL, downloadJob.Offset)
 		downloadChunk := DownloadedChunk{
-			rawBytes: rawBytes,
-			offset:   downloadJob.offset,
-			err:      err,
+			RawBytes: rawBytes,
+			Offset:   downloadJob.Offset,
+			Err:      err,
 		}
-		result <- downloadChunk
+		results <- downloadChunk
 	}
 }
 
-func DownloadChunk(ctx context.Context, fileURL string, offset Offset) ([]byte, error) {
+func ChunkDownload(ctx context.Context, fileURL string, offset Offset) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
 
